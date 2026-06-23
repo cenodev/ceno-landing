@@ -43,3 +43,46 @@ const observer = new IntersectionObserver(
 
 document.querySelectorAll('.reveal').forEach((element) => observer.observe(element));
 document.querySelector('[data-year]').textContent = new Date().getFullYear();
+
+const contactForm = document.querySelector('[data-contact-form]');
+const formStatus = document.querySelector('[data-form-status]');
+const submitButton = document.querySelector('[data-submit-button]');
+const submitLabel = document.querySelector('[data-submit-label]');
+
+contactForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+
+  if (!contactForm.checkValidity()) {
+    contactForm.reportValidity();
+    return;
+  }
+
+  const defaultLabel = submitLabel.textContent;
+  submitButton.disabled = true;
+  submitLabel.textContent = 'Transmitting…';
+  formStatus.textContent = 'Securely sending your project brief…';
+  formStatus.className = 'form-status';
+
+  try {
+    const response = await fetch(contactForm.action, {
+      method: 'POST',
+      body: new FormData(contactForm),
+      headers: { Accept: 'application/json' },
+    });
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || 'The form could not be sent.');
+    }
+
+    contactForm.reset();
+    formStatus.textContent = 'Message received. We’ll be in touch shortly.';
+    formStatus.className = 'form-status is-success';
+  } catch (error) {
+    formStatus.textContent = 'Something went wrong. Please wait a moment and try again.';
+    formStatus.className = 'form-status is-error';
+  } finally {
+    submitButton.disabled = false;
+    submitLabel.textContent = defaultLabel;
+  }
+});
